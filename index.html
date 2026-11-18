@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משימות הבית והמשפחה</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Rubik', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-teal-600 text-white rounded-xl text-xl">🏡</div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900">משימות הבית והמשפחה</h1>
+                    <p id="hebrew-header-date" class="text-xs font-semibold text-teal-700">טוען תאריך עברי...</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="sync-status" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">ממתין לחיבור</span>
+                <button onclick="loadTasks()" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">🔄 רענן</button>
+                <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition">⚙️ הגדרות וניהול</button>
+            </div>
+        </div>
+
+        <!-- פאנל הגדרות, קטגוריות ושמות -->
+        <div id="settings-bar" class="hidden bg-slate-100 border-t border-slate-200 px-4 py-5 shadow-inner">
+            <div class="max-w-5xl mx-auto space-y-5">
+                
+                <!-- חיבור שיטס -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-2 items-center">
+                    <label class="text-xs font-bold text-slate-700 shrink-0">קישור Web App URL:</label>
+                    <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono">
+                    <button onclick="saveUrl()" class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg">שמור והתחבר</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- ניהול קטגוריות -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-sm text-slate-900">📂 ניהול רשימת קטגוריות</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-category-input" placeholder="שם קטגוריה חדשה..." class="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            <button onclick="addCategory()" class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">הוסף</button>
+                        </div>
+                        <div id="manage-categories-list" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+
+                    <!-- ניהול שמות (משויכים) -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                        <h3 class="font-bold text-sm text-slate-900">👥 ניהול שמות (לשיוך משימות)</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="new-assignee-input" placeholder="הוסף שם חדש..." class="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+                            <button onclick="addAssignee()" class="bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg">הוסף</button>
+                        </div>
+                        <div id="manage-assignees-list" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
+
+        <!-- טופס הוספת משימה -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <h2 class="font-bold text-slate-900 text-sm mb-3">➕ הוספת משימה חדשה</h2>
+            <form onsubmit="addTask(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <input type="text" id="task-title" required placeholder="מה צריך לעשות?" class="sm:col-span-5 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                
+                <select id="task-category" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"></select>
+
+                <select id="task-assignee" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"></select>
+
+                <select id="task-priority" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="דחוף">🔴 דחוף</option>
+                    <option value="רגיל" selected>🟡 רגיל</option>
+                    <option value="נמוך">🟢 כשמתפנה</option>
+                </select>
+
+                <button type="submit" class="sm:col-span-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm">הוסף</button>
+            </form>
+        </div>
+
+        <!-- סרגל סינון דינמי -->
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+            <div id="assignee-filter-bar" class="flex flex-wrap items-center gap-1.5"></div>
+
+            <div class="flex items-center gap-3">
+                <select id="filter-category" onchange="renderTasks()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-medium text-slate-700 focus:outline-none">
+                    <option value="הכל">כל הקטגוריות</option>
+                </select>
+
+                <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer">
+                    <input type="checkbox" id="show-done" onchange="renderTasks()" class="accent-teal-600 w-4 h-4">
+                    הצג הושלמו
+                </label>
+            </div>
+        </div>
+
+        <!-- רשימת המשימות -->
+        <div id="tasks-container" class="space-y-3"></div>
+
+    </main>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
+
+    <script>
+        let gasUrl = localStorage.getItem('home_gas_url') || '';
+        let tasks = [];
+        let categories = ['🛠️ בית ותחזוקה', '🧸 ילדים וחינוך', '🛒 קניות וסידורים', '💳 כספים ובירוקרטיה', '📌 כללי'];
+        let assignees = ['שמוליק', 'מושקא', 'משותף'];
+        let filterAssignee = 'הכל';
+
+        // המרת תאריך לעברי + יום בשבוע
+        function getHebrewDateString(dateObj = new Date(), includeYear = true) {
+            const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(dateObj);
+            const hebOptions = { calendar: 'hebrew', day: 'numeric', month: 'long' };
+            if (includeYear) hebOptions.year = 'numeric';
+            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', hebOptions).format(dateObj);
+            return `${weekday}, ${hebDate}`;
+        }
+
+        function getShortHebrewStamp() {
+            const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'short' }).format(new Date());
+            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { calendar: 'hebrew', day: 'numeric', month: 'short' }).format(new Date());
+            return `יום ${weekday} (${hebDate})`;
+        }
+
+        window.onload = function() {
+            document.getElementById('hebrew-header-date').innerText = '📅 ' + getHebrewDateString(new Date(), true);
+            document.getElementById('gas-url').value = gasUrl;
+            refreshDropdownsAndManagement();
+
+            if (!gasUrl) {
+                document.getElementById('settings-bar').classList.remove('hidden');
+                showToast('הדבק את קישור ה-Web App למעלה כדי להתחיל');
+            } else {
+                loadTasks();
+            }
+        };
+
+        function toggleSettings() {
+            document.getElementById('settings-bar').classList.toggle('hidden');
+        }
+
+        function saveUrl() {
+            const val = document.getElementById('gas-url').value.trim();
+            if (!val) return;
+            gasUrl = val;
+            localStorage.setItem('home_gas_url', gasUrl);
+            loadTasks();
+        }
+
+        // ====== ניהול קטגוריות ושמות ======
+        function refreshDropdownsAndManagement() {
+            // עדכון תפריטי בחירה בטופס הוספה ובסינון
+            const catSelect = document.getElementById('task-category');
+            const filterCatSelect = document.getElementById('filter-category');
+            const currentFilterCat = filterCatSelect.value;
+
+            catSelect.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+            filterCatSelect.innerHTML = `<option value="הכל">כל הקטגוריות</option>` + 
+                categories.map(c => `<option value="${escapeHtml(c)}" ${c === currentFilterCat ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+
+            const assSelect = document.getElementById('task-assignee');
+            assSelect.innerHTML = assignees.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+
+            // עדכון רשימות ניהול בהגדרות
+            document.getElementById('manage-categories-list').innerHTML = categories.map((c, idx) => `
+                <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-800 text-xs font-medium px-2.5 py-1 rounded-lg border border-slate-200">
+                    ${escapeHtml(c)}
+                    <button onclick="removeCategory(${idx})" class="text-slate-400 hover:text-rose-600 font-bold">✕</button>
+                </span>
+            `).join('');
+
+            document.getElementById('manage-assignees-list').innerHTML = assignees.map((a, idx) => `
+                <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-800 text-xs font-medium px-2.5 py-1 rounded-lg border border-teal-200">
+                    ${escapeHtml(a)}
+                    <button onclick="removeAssignee(${idx})" class="text-teal-400 hover:text-rose-600 font-bold">✕</button>
+                </span>
+            `).join('');
+        }
+
+        function addCategory() {
+            const input = document.getElementById('new-category-input');
+            const val = input.value.trim();
+            if (!val || categories.includes(val)) return;
+            categories.push(val);
+            input.value = '';
+            refreshDropdownsAndManagement();
+            saveConfigToSheets();
+        }
+
+        function removeCategory(idx) {
+            if (categories.length <= 1) { showToast('חייבת להישאר לפחות קטגוריה אחת'); return; }
+            categories.splice(idx, 1);
+            refreshDropdownsAndManagement();
+            saveConfigToSheets();
+        }
+
+        function addAssignee() {
+            const input = document.getElementById('new-assignee-input');
+            const val = input.value.trim();
+            if (!val || assignees.includes(val)) return;
+            assignees.push(val);
+            input.value = '';
+            refreshDropdownsAndManagement();
+            renderTasks();
+            saveConfigToSheets();
+        }
+
+        function removeAssignee(idx) {
+            if (assignees.length <= 1) { showToast('חייב להישאר לפחות שם אחד'); return; }
+            const removed = assignees[idx];
+            if (filterAssignee === removed) filterAssignee = 'הכל';
+            assignees.splice(idx, 1);
+            refreshDropdownsAndManagement();
+            renderTasks();
+            saveConfigToSheets();
+        }
+
+        function saveConfigToSheets() {
+            if (!gasUrl) return;
+            setStatus('שומר הגדרות...', 'bg-amber-50 text-amber-700');
+            fetchJSONP({
+                action: 'saveConfig',
+                categories: JSON.stringify(categories),
+                assignees: JSON.stringify(assignees)
+            }).then(() => {
+                setStatus('מסונכרן ✓', 'bg-emerald-50 text-emerald-700');
+                showToast('הרשימה נשמרה בגוגל שיטס!');
+            });
+        }
+
+        // ====== תקשורת מול גוגל שיטס ======
+        function fetchJSONP(params) {
+            return new Promise((resolve, reject) => {
+                if (!gasUrl) { reject('No URL'); return; }
+                const cbName = 'cb_' + Math.round(Math.random() * 1000000);
+                window[cbName] = function(data) {
+                    resolve(data);
+                    delete window[cbName];
+                    document.getElementById(cbName)?.remove();
+                };
+                const q = new URLSearchParams(params);
+                q.set('callback', cbName);
+                const script = document.createElement('script');
+                script.id = cbName;
+                script.src = gasUrl + (gasUrl.includes('?') ? '&' : '?') + q.toString();
+                script.onerror = () => { reject('Network error'); delete window[cbName]; };
+                document.body.appendChild(script);
+            });
+        }
+
+        function setStatus(text, colorClass) {
+            const el = document.getElementById('sync-status');
+            el.innerText = text;
+            el.className = `text-xs font-semibold px-2.5 py-1 rounded-lg ${colorClass}`;
+        }
+
+        function loadTasks() {
+            setStatus('טוען נתונים...', 'bg-amber-50 text-amber-700');
+            fetchJSONP({ action: 'loadAll' })
+                .then(res => {
+                    if (res.status === 'success') {
+                        tasks = res.tasks || [];
+                        if (res.categories && res.categories.length) categories = res.categories;
+                        if (res.assignees && res.assignees.length) assignees = res.assignees;
+                        refreshDropdownsAndManagement();
+                        setStatus('מסונכרן ✓', 'bg-emerald-50 text-emerald-700');
+                        renderTasks();
+                    } else {
+                        setStatus('שגיאת שרת', 'bg-rose-50 text-rose-700');
+                    }
+                })
+                .catch(() => setStatus('שגיאת חיבור', 'bg-rose-50 text-rose-700'));
+        }
+
+        function addTask(e) {
+            e.preventDefault();
+            if (!gasUrl) { showToast('נא להגדיר קישור גוגל שיטס קודם'); return; }
+            const title = document.getElementById('task-title').value.trim();
+            if (!title) return;
+
+            const newTask = {
+                id: Date.now(),
+                title: title,
+                category: document.getElementById('task-category').value,
+                assignee: document.getElementById('task-assignee').value,
+                priority: document.getElementById('task-priority').value,
+                status: 'פתוח',
+                progress: '',
+                updatedAt: getShortHebrewStamp()
+            };
+
+            tasks.unshift(newTask);
+            document.getElementById('task-title').value = '';
+            renderTasks();
+
+            setStatus('שומר...', 'bg-amber-50 text-amber-700');
+            fetchJSONP({ action: 'addTask', task: JSON.stringify(newTask) })
+                .then(() => { setStatus('נשמר ✓', 'bg-emerald-50 text-emerald-700'); showToast('המשימה נוספה!'); })
+                .catch(() => setStatus('שגיאה בשמירה', 'bg-rose-50 text-rose-700'));
+        }
+
+        function updateTaskField(id, field, value) {
+            const t = tasks.find(x => x.id === id);
+            if (!t) return;
+            t[field] = value;
+            t.updatedAt = getShortHebrewStamp();
+            renderTasks();
+
+            setStatus('מעדכן...', 'bg-amber-50 text-amber-700');
+            const updates = { [field]: value, updatedAt: t.updatedAt };
+            fetchJSONP({ action: 'updateTask', id: id, updates: JSON.stringify(updates) })
+                .then(() => setStatus('מסונכרן ✓', 'bg-emerald-50 text-emerald-700'))
+                .catch(() => setStatus('שגיאת עדכון', 'bg-rose-50 text-rose-700'));
+        }
+
+        function deleteTask(id) {
+            if (!confirm('למחוק משימה זו?')) return;
+            tasks = tasks.filter(x => x.id !== id);
+            renderTasks();
+            fetchJSONP({ action: 'deleteTask', id: id })
+                .then(() => showToast('המשימה נמחקה'));
+        }
+
+        function setFilterAssignee(who) {
+            filterAssignee = who;
+            renderTasks();
+        }
+
+        // צבעים דינמיים לשמות
+        const palette = [
+            'bg-sky-100 text-sky-800 border-sky-200',
+            'bg-rose-100 text-rose-800 border-rose-200',
+            'bg-purple-100 text-purple-800 border-purple-200',
+            'bg-amber-100 text-amber-800 border-amber-200',
+            'bg-emerald-100 text-emerald-800 border-emerald-200',
+            'bg-indigo-100 text-indigo-800 border-indigo-200'
+        ];
+        function getAssigneeStyle(name) {
+            const idx = assignees.indexOf(name);
+            return palette[idx >= 0 ? idx % palette.length : 0];
+        }
+
+        function renderTasks() {
+            const showDone = document.getElementById('show-done').checked;
+            const filterCat = document.getElementById('filter-category').value;
+            const openTasks = tasks.filter(t => t.status !== 'הושלם');
+
+            // בניית סרגל כפתורי שמות דינמי
+            const filterBar = document.getElementById('assignee-filter-bar');
+            let buttonsHtml = `<button onclick="setFilterAssignee('הכל')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${filterAssignee === 'הכל' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">הכל (${openTasks.length})</button>`;
+            
+            assignees.forEach(name => {
+                const count = openTasks.filter(t => t.assignee === name).length;
+                const activeRing = filterAssignee === name ? 'ring-2 ring-offset-1 ring-slate-800' : 'opacity-85 hover:opacity-100';
+                buttonsHtml += `<button onclick="setFilterAssignee('${escapeHtml(name)}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${getAssigneeStyle(name)} ${activeRing}">${escapeHtml(name)} (${count})</button>`;
+            });
+            filterBar.innerHTML = buttonsHtml;
+
+            // סינון משימות
+            let filtered = tasks.filter(t => {
+                if (!showDone && t.status === 'הושלם') return false;
+                if (filterAssignee !== 'הכל' && t.assignee !== filterAssignee) return false;
+                if (filterCat !== 'הכל' && t.category !== filterCat) return false;
+                return true;
+            });
+
+            // מיון לפי תיעדוף
+            const prioWeight = { 'דחוף': 1, 'רגיל': 2, 'נמוך': 3 };
+            filtered.sort((a, b) => {
+                if ((a.status === 'הושלם') !== (b.status === 'הושלם')) return a.status === 'הושלם' ? 1 : -1;
+                return (prioWeight[a.priority] || 2) - (prioWeight[b.priority] || 2);
+            });
+
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="bg-white p-10 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">אין משימות להצגה בסינון הנוכחי 🎉</div>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const isDone = t.status === 'הושלם';
+                const borderColor = {
+                    'דחוף': 'border-r-rose-500',
+                    'רגיל': 'border-r-amber-400',
+                    'נמוך': 'border-r-emerald-400'
+                }[t.priority] || 'border-r-slate-300';
+
+                // אופציות בחירת שם בתוך כרטיס המשימה
+                const assigneeOptions = assignees.map(a => 
+                    `<option value="${escapeHtml(a)}" ${t.assignee === a ? 'selected' : ''}>${escapeHtml(a)}</option>`
+                ).join('');
+
+                // אופציות בחירת קטגוריה בתוך כרטיס המשימה
+                const categoryOptions = categories.map(c => 
+                    `<option value="${escapeHtml(c)}" ${t.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`
+                ).join('');
+
+                const card = `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-r-4 ${borderColor} shadow-sm transition ${isDone ? 'opacity-60 bg-slate-50' : ''}">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center gap-2.5 flex-1 min-w-[200px]">
+                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="updateTaskField(${t.id}, 'status', this.checked ? 'הושלם' : 'פתוח')" class="w-5 h-5 accent-teal-600 cursor-pointer shrink-0">
+                            <span class="font-bold text-base text-slate-900 break-words ${isDone ? 'line-through text-slate-500' : ''}">${escapeHtml(t.title)}</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <select onchange="updateTaskField(${t.id}, 'assignee', this.value)" class="text-xs font-bold px-2.5 py-1 rounded-lg border ${getAssigneeStyle(t.assignee)} cursor-pointer">
+                                ${assigneeOptions}
+                            </select>
+
+                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 cursor-pointer">
+                                <option value="דחוף" ${t.priority==='דחוף'?'selected':''}>🔴 דחוף</option>
+                                <option value="רגיל" ${t.priority==='רגיל'?'selected':''}>🟡 רגיל</option>
+                                <option value="נמוך" ${t.priority==='נמוך'?'selected':''}>🟢 כשמתפנה</option>
+                            </select>
+
+                            <select onchange="updateTaskField(${t.id}, 'category', this.value)" class="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-lg cursor-pointer">
+                                ${categoryOptions}
+                            </select>
+
+                            <button onclick="deleteTask(${t.id})" title="מחק" class="text-slate-400 hover:text-rose-600 px-1.5 text-sm">🗑️</button>
+                        </div>
+                    </div>
+
+                    <!-- שורת עדכון התקדמות -->
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <span class="text-xs font-bold text-teal-700 shrink-0">📝 התקדמות:</span>
+                        <input type="text" value="${escapeHtml(t.progress || '')}" 
+                               placeholder="כתוב כאן איפה זה עומד..." 
+                               onchange="updateTaskField(${t.id}, 'progress', this.value)"
+                               onkeydown="if(event.key==='Enter') this.blur()"
+                               class="flex-1 min-w-[180px] bg-transparent text-xs text-slate-800 focus:outline-none">
+                        <span class="text-[11px] font-medium text-slate-500 shrink-0">עודכן: ${escapeHtml(t.updatedAt || '')}</span>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', card);
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('opacity-0');
+            setTimeout(() => t.classList.add('opacity-0'), 3000);
+        }
+    </script>
+</body>
+</html>
