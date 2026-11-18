@@ -8,6 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Rubik', sans-serif; }
+        #tasks-container { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; align-items:start; }
+        #tasks-container > div { min-width:0; }
+        @media (max-width: 360px) { #tasks-container { gap:.4rem; } #tasks-container > div { padding:.55rem; } }
+        #tasks-container input[type="text"] { min-width:0; }
+        #tasks-container select { max-width:100%; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -118,7 +123,7 @@
         </div>
 
         <!-- רשימת המשימות -->
-        <div id="tasks-container" class="space-y-3"></div>
+        <div id="tasks-container" class="grid grid-cols-2 gap-2.5 items-start"></div>
 
     </main>
 
@@ -523,27 +528,26 @@
                     : `<p class="text-xs text-slate-400 italic">טרם נרשמו פעולות בהיסטוריה.</p>`;
 
                 const card = `
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-r-4 ${borderColor} shadow-sm transition ${isDone ? 'opacity-65 bg-slate-50' : ''}">
+                <div class="bg-white p-2.5 sm:p-3 rounded-2xl border border-slate-200 border-r-4 ${borderColor} shadow-sm transition min-w-0 ${isDone ? 'opacity-65 bg-slate-50' : ''}">
                     <!-- שורה ראשית -->
-                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <div class="flex items-center gap-2.5 flex-1 min-w-[200px]">
-                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="updateTaskField(${t.id}, 'status', this.checked ? 'הושלם' : 'פתוח')" class="w-5 h-5 accent-teal-600 cursor-pointer shrink-0">
-                            <span class="font-bold text-base text-slate-900 break-words ${isDone ? 'line-through text-slate-500' : ''}">${escapeHtml(t.title)}</span>
+                    <div class="flex flex-col gap-2 mb-2.5">
+                        <div class="flex items-start gap-1.5 min-w-0">
+                            <input type="checkbox" ${isDone ? 'checked' : ''} onchange="updateTaskField(${t.id}, 'status', this.checked ? 'הושלם' : 'פתוח')" class="w-4 h-4 mt-0.5 accent-teal-600 cursor-pointer shrink-0">
+                            <span class="font-bold text-[13px] leading-snug text-slate-900 break-words ${isDone ? 'line-through text-slate-500' : ''}">${escapeHtml(t.title)}</span>
                         </div>
-
-                        <div class="flex flex-wrap items-center gap-1.5">
-                            <select onchange="updateTaskField(${t.id}, 'assignee', this.value)" class="text-xs font-bold px-2.5 py-1 rounded-lg border ${getAssigneeStyle(t.assignee)} cursor-pointer">
+                        <div class="flex flex-wrap items-center gap-1">
+                            <select onchange="updateTaskField(${t.id}, 'assignee', this.value)" class="text-[10px] sm:text-xs font-bold px-1.5 py-1 rounded-lg border ${getAssigneeStyle(t.assignee)} cursor-pointer">
                                 ${assigneeOptions}
                             </select>
 
-                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 cursor-pointer">
+                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-[10px] sm:text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1 cursor-pointer">
                                 <option value="היום" ${t.priority==='היום'?'selected':''}>🔥 1 - היום</option>
                                 <option value="דחוף" ${t.priority==='דחוף'?'selected':''}>🔴 2 - דחוף</option>
                                 <option value="רגיל" ${t.priority==='רגיל'?'selected':''}>🟡 3 - רגיל</option>
                                 <option value="נמוך" ${t.priority==='נמוך'?'selected':''}>🟢 4 - כשמתפנה</option>
                             </select>
 
-                            <select onchange="updateTaskField(${t.id}, 'category', this.value)" class="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-lg cursor-pointer">
+                            <select onchange="updateTaskField(${t.id}, 'category', this.value)" class="text-[10px] sm:text-xs bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-1 rounded-lg cursor-pointer">
                                 ${categoryOptions}
                             </select>
 
@@ -552,8 +556,8 @@
                     </div>
 
                     <!-- פס התקדמות באחוזים -->
-                    <div class="flex items-center gap-3 mb-2.5 px-1">
-                        <span class="text-xs font-bold text-slate-600 shrink-0 w-16">התקדמות:</span>
+                    <div class="flex items-center gap-2 mb-2 px-0.5">
+                        <span class="text-[10px] font-bold text-slate-600 shrink-0">התקדמות</span>
                         <input type="range" min="0" max="100" step="10" value="${pct}" 
                                onchange="updateTaskField(${t.id}, 'percent', this.value)"
                                oninput="this.nextElementSibling.innerText = this.value + '%'"
@@ -562,14 +566,14 @@
                     </div>
 
                     <!-- שורת עדכון התקדמות טקסטואלי + כפתור היסטוריה -->
-                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <span class="text-xs font-bold text-teal-700 shrink-0">📝 סטטוס נוכחי:</span>
+                    <div class="flex flex-col items-stretch gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <span class="text-[10px] font-bold text-teal-700 shrink-0">📝 סטטוס נוכחי</span>
                         <input type="text" value="${escapeHtml(t.progress || '')}" 
                                placeholder="כתוב כאן מה נעשה לאחרונה..." 
                                onchange="updateTaskField(${t.id}, 'progress', this.value)"
                                onkeydown="if(event.key==='Enter') this.blur()"
-                               class="flex-1 min-w-[180px] bg-transparent text-xs text-slate-800 focus:outline-none">
-                        <button onclick="toggleTaskHistory(${t.id})" class="text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg transition shrink-0">
+                               class="w-full min-w-0 bg-transparent text-[11px] text-slate-800 focus:outline-none">
+                        <button onclick="toggleTaskHistory(${t.id})" class="self-start text-[10px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 px-2 py-1 rounded-lg transition shrink-0">
                             📜 היסטוריה (${histList.length}) ${isHistoryOpen ? '▲' : '▼'}
                         </button>
                     </div>
