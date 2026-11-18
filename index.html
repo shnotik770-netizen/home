@@ -173,7 +173,22 @@
         function toggleAddTask(){const p=document.getElementById('add-task-panel');const open=p.classList.contains('hidden');p.classList.toggle('hidden',!open);document.getElementById('add-task-plus').textContent=open?'−':'＋';document.getElementById('add-task-toggle').setAttribute('aria-expanded',String(open));if(open)document.getElementById('task-title').focus();}
         function openEditTask(id){const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;document.getElementById('edit-task-id').value=t.id;document.getElementById('edit-task-title').value=t.title||'';document.getElementById('edit-task-category').innerHTML=categories.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-assignee').innerHTML=assignees.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-category').value=t.category;document.getElementById('edit-task-assignee').value=t.assignee;document.getElementById('edit-task-priority').value=t.priority||'רגיל';document.getElementById('edit-task-progress').value=t.progress||'';document.getElementById('edit-task-modal').classList.remove('hidden');}
         function closeEditTask(){document.getElementById('edit-task-modal').classList.add('hidden');}
-        function saveEditedTask(){const id=document.getElementById('edit-task-id').value;const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;const v={title:document.getElementById('edit-task-title').value.trim(),category:document.getElementById('edit-task-category').value,assignee:document.getElementById('edit-task-assignee').value,priority:document.getElementById('edit-task-priority').value,progress:document.getElementById('edit-task-progress').value.trim()};if(!v.title){showToast('צריך להזין שם למשימה');return;}closeEditTask();Object.keys(v).forEach(k=>updateTaskField(id,k,v[k]));}
+        function saveEditedTask(){
+            const id=document.getElementById('edit-task-id').value;
+            const t=tasks.find(x=>String(x.id)===String(id));
+            if(!t)return;
+            const v={title:document.getElementById('edit-task-title').value.trim(),category:document.getElementById('edit-task-category').value,assignee:document.getElementById('edit-task-assignee').value,priority:document.getElementById('edit-task-priority').value,progress:document.getElementById('edit-task-progress').value.trim()};
+            if(!v.title){showToast('צריך להזין שם למשימה');return;}
+            const stamp=getShortHebrewStamp();
+            if(!Array.isArray(t.history))t.history=[];
+            t.history.unshift({date:stamp,text:'פרטי המשימה נערכו'});
+            Object.assign(t,v,{updatedAt:stamp});
+            saveTasksCache();closeEditTask();renderTasks();
+            setStatus('מעדכן...','bg-amber-50 text-amber-700');
+            fetchJSONP({action:'updateTask',id:id,updates:JSON.stringify({title:t.title,category:t.category,assignee:t.assignee,priority:t.priority,progress:t.progress,updatedAt:t.updatedAt,history:t.history})})
+              .then(()=>setStatus('מסונכרן ✓','bg-emerald-50 text-emerald-700'))
+              .catch(()=>setStatus('שגיאת עדכון','bg-rose-50 text-rose-700'));
+        }
 
 
         // תאריך עברי + יום בשבוע + שעה
