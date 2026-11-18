@@ -574,24 +574,15 @@
                             <input type="checkbox" ${isDone ? 'checked' : ''} onchange="updateTaskField(${t.id}, 'status', this.checked ? 'הושלם' : 'פתוח')" class="w-4 h-4 mt-0.5 accent-teal-600 cursor-pointer shrink-0">
                             <span class="font-bold text-[13px] leading-snug text-slate-900 break-words ${isDone ? 'line-through text-slate-500' : ''}">${escapeHtml(t.title)}</span>
                         </div>
-                        <div class="flex flex-wrap items-center gap-1">
-                            <select onchange="updateTaskField(${t.id}, 'assignee', this.value)" class="text-[10px] sm:text-xs font-bold px-1.5 py-1 rounded-lg border ${getAssigneeStyle(t.assignee)} cursor-pointer">
-                                ${assigneeOptions}
-                            </select>
-
-                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-[10px] sm:text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1 cursor-pointer">
-                                <option value="היום" ${t.priority==='היום'?'selected':''}>🔥 1 - היום</option>
-                                <option value="דחוף" ${t.priority==='דחוף'?'selected':''}>🔴 2 - דחוף</option>
-                                <option value="רגיל" ${t.priority==='רגיל'?'selected':''}>🟡 3 - רגיל</option>
-                                <option value="נמוך" ${t.priority==='נמוך'?'selected':''}>🟢 4 - כשמתפנה</option>
-                            </select>
-
-                            <select onchange="updateTaskField(${t.id}, 'category', this.value)" class="text-[10px] sm:text-xs bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-1 rounded-lg cursor-pointer">
-                                ${categoryOptions}
-                            </select>
-
-                            <button onclick="openEditTask(${t.id})" class="text-teal-700 bg-teal-50 border rounded-lg px-2 py-1 text-[10px] font-bold">✏️ עריכה</button>
-                            <button onclick="deleteTask(${t.id})" title="מחק" class="text-slate-400 hover:text-rose-600 px-1.5 text-sm">🗑️</button>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] min-w-0">
+                            <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 rounded-lg px-2 py-1 max-w-full">
+                                <span>📂</span><span class="truncate">${escapeHtml(t.category || 'ללא קטגוריה')}</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1 border rounded-lg px-2 py-1 max-w-full ${getAssigneeStyle(t.assignee)}">
+                                <span>👤</span><span class="truncate">${escapeHtml(t.assignee || 'לא משויך')}</span>
+                            </span>
+                            <button onclick="openEditTask(${t.id})" class="text-teal-700 bg-teal-50 border border-teal-100 rounded-lg px-2 py-1 text-[10px] font-bold shrink-0">✏️ עריכה</button>
+                            <button onclick="deleteTask(${t.id})" title="מחק" class="text-slate-400 hover:text-rose-600 px-1.5 text-sm shrink-0">🗑️</button>
                         </div>
                     </div>
 
