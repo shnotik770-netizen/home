@@ -7,12 +7,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Rubik', sans-serif; }
-        #tasks-container { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; align-items:start; }
-        #tasks-container > div { min-width:0; }
-        @media (max-width: 360px) { #tasks-container { gap:.4rem; } #tasks-container > div { padding:.55rem; } }
-        #tasks-container input[type="text"] { min-width:0; }
-        #tasks-container select { max-width:100%; }
+        * { box-sizing:border-box; }
+        body { font-family: 'Rubik', sans-serif; overflow-x:hidden; }
+        #tasks-container { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem; align-items:start; width:100%; }
+        #tasks-container > div { min-width:0; max-width:100%; }
+        #tasks-container input[type="text"] { min-width:0; width:100%; }
+        #tasks-container select { max-width:100%; min-width:0; }
+        #assignee-filter-bar { display:flex; flex-wrap:nowrap; gap:.4rem; overflow-x:auto; white-space:nowrap; max-width:100%; padding:2px 1px 7px; }
+        #assignee-filter-bar button { flex:0 0 auto; }
+        @media (max-width: 390px) { #tasks-container { grid-template-columns:1fr; gap:.6rem; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -68,9 +71,9 @@
 
     <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
 
-        <!-- טופס הוספת משימה -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h2 class="font-bold text-slate-900 text-sm mb-3">➕ הוספת משימה חדשה</h2>
+        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <button type="button" onclick="toggleAddTask()" id="add-task-toggle" aria-expanded="false" class="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-800"><span>הוספת משימה חדשה</span><span id="add-task-plus" class="text-xl text-teal-700">＋</span></button>
+            <div id="add-task-panel" class="hidden border-t border-slate-100 p-4">
             <form onsubmit="addTask(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <input type="text" id="task-title" required placeholder="מה צריך לעשות?" class="sm:col-span-5 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 
@@ -86,8 +89,7 @@
                 </select>
 
                 <button type="submit" class="sm:col-span-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm">הוסף</button>
-            </form>
-        </div>
+            </form></div></section>
 
         <!-- סרגל סינון, מיון ותצוגה (נשמר בזיכרון) -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
@@ -127,6 +129,14 @@
 
     </main>
 
+    <div id="edit-task-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 p-4 flex items-center justify-center" role="dialog" aria-modal="true"><div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-5 space-y-3">
+    <div class="flex justify-between"><b>עריכת משימה</b><button onclick="closeEditTask()">×</button></div><input id="edit-task-id" type="hidden">
+    <label class="block text-xs font-bold">שם המשימה<input id="edit-task-title" class="mt-1 w-full p-3 border rounded-xl"></label>
+    <label class="block text-xs font-bold">קטגוריה<select id="edit-task-category" class="mt-1 w-full p-3 border rounded-xl"></select></label>
+    <label class="block text-xs font-bold">שיוך<select id="edit-task-assignee" class="mt-1 w-full p-3 border rounded-xl"></select></label>
+    <label class="block text-xs font-bold">דחיפות<select id="edit-task-priority" class="mt-1 w-full p-3 border rounded-xl"><option value="היום">🔥 1 - היום</option><option value="דחוף">🔴 2 - דחוף</option><option value="רגיל">🟡 3 - רגיל</option><option value="נמוך">🟢 4 - כשמתפנה</option></select></label>
+    <label class="block text-xs font-bold">סטטוס נוכחי<textarea id="edit-task-progress" rows="3" class="mt-1 w-full p-3 border rounded-xl"></textarea></label>
+    <div class="flex gap-2"><button onclick="saveEditedTask()" class="flex-1 bg-teal-600 text-white font-bold p-3 rounded-xl">שמור שינויים</button><button onclick="closeEditTask()" class="p-3 bg-slate-100 rounded-xl">ביטול</button></div></div></div>
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
 
     <script>
@@ -157,6 +167,15 @@
             renderTasks();
         }
 
+        const TASK_CACHE_KEY='home_tasks_cache_v1';
+        function saveTasksCache(){try{localStorage.setItem(TASK_CACHE_KEY,JSON.stringify({tasks:tasks,savedAt:Date.now()}));}catch(e){}}
+        function loadTasksCache(){try{const x=JSON.parse(localStorage.getItem(TASK_CACHE_KEY)||'null');if(x&&Array.isArray(x.tasks)){tasks=x.tasks;return true;}}catch(e){}return false;}
+        function toggleAddTask(){const p=document.getElementById('add-task-panel');const open=p.classList.contains('hidden');p.classList.toggle('hidden',!open);document.getElementById('add-task-plus').textContent=open?'−':'＋';document.getElementById('add-task-toggle').setAttribute('aria-expanded',String(open));if(open)document.getElementById('task-title').focus();}
+        function openEditTask(id){const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;document.getElementById('edit-task-id').value=t.id;document.getElementById('edit-task-title').value=t.title||'';document.getElementById('edit-task-category').innerHTML=categories.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-assignee').innerHTML=assignees.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-category').value=t.category;document.getElementById('edit-task-assignee').value=t.assignee;document.getElementById('edit-task-priority').value=t.priority||'רגיל';document.getElementById('edit-task-progress').value=t.progress||'';document.getElementById('edit-task-modal').classList.remove('hidden');}
+        function closeEditTask(){document.getElementById('edit-task-modal').classList.add('hidden');}
+        function saveEditedTask(){const id=document.getElementById('edit-task-id').value;const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;const v={title:document.getElementById('edit-task-title').value.trim(),category:document.getElementById('edit-task-category').value,assignee:document.getElementById('edit-task-assignee').value,priority:document.getElementById('edit-task-priority').value,progress:document.getElementById('edit-task-progress').value.trim()};if(!v.title){showToast('צריך להזין שם למשימה');return;}closeEditTask();Object.keys(v).forEach(k=>updateTaskField(id,k,v[k]));}
+
+
         // תאריך עברי + יום בשבוע + שעה
         function getHebrewDateString(dateObj = new Date()) {
             const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(dateObj);
@@ -182,7 +201,7 @@
 
             refreshDropdownsAndManagement();
             if (savedPrefs.filterCategory) document.getElementById('filter-category').value = savedPrefs.filterCategory;
-            
+            if(loadTasksCache()){setStatus('נתונים שמורים · בודק סנכרון…','bg-amber-50 text-amber-700');renderTasks();}
             loadTasks();
         };
 
@@ -309,6 +328,7 @@
                 .then(res => {
                     if (res.status === 'success') {
                         tasks = res.tasks || [];
+                        saveTasksCache();
                         if (res.categories && res.categories.length) categories = res.categories;
                         if (res.assignees && res.assignees.length) assignees = res.assignees;
                         refreshDropdownsAndManagement();
@@ -321,7 +341,7 @@
                         setStatus('שגיאת שרת', 'bg-rose-50 text-rose-700');
                     }
                 })
-                .catch(() => setStatus('שגיאת חיבור', 'bg-rose-50 text-rose-700'));
+                .catch(() => setStatus(tasks.length ? 'אין חיבור · מוצגים נתונים שמורים' : 'שגיאת חיבור', tasks.length ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'));
         }
 
         function addTask(e) {
@@ -345,6 +365,8 @@
             };
 
             tasks.unshift(newTask);
+            saveTasksCache();
+            toggleAddTask();
             document.getElementById('task-title').value = '';
             renderTasks();
 
@@ -386,6 +408,7 @@
             }
 
             t[field] = value;
+            saveTasksCache();
             t.updatedAt = stamp;
             if (logText) {
                 t.history.unshift({ date: stamp, text: logText });
@@ -409,6 +432,7 @@
         function deleteTask(id) {
             if (!confirm('למחוק משימה זו לצמיתות?')) return;
             tasks = tasks.filter(x => x.id !== id);
+            saveTasksCache();
             renderTasks();
             fetchJSONP({ action: 'deleteTask', id: id })
                 .then(() => showToast('המשימה נמחקה'));
@@ -551,6 +575,7 @@
                                 ${categoryOptions}
                             </select>
 
+                            <button onclick="openEditTask(${t.id})" class="text-teal-700 bg-teal-50 border rounded-lg px-2 py-1 text-[10px] font-bold">✏️ עריכה</button>
                             <button onclick="deleteTask(${t.id})" title="מחק" class="text-slate-400 hover:text-rose-600 px-1.5 text-sm">🗑️</button>
                         </div>
                     </div>
