@@ -13,9 +13,10 @@
         #tasks-container > div { min-width:0; max-width:100%; }
         #tasks-container input[type="text"] { min-width:0; width:100%; }
         #tasks-container select { max-width:100%; min-width:0; }
-        #assignee-filter-bar { display:flex; flex-wrap:nowrap; gap:.4rem; overflow-x:auto; white-space:nowrap; max-width:100%; padding:2px 1px 7px; }
-        #assignee-filter-bar button { flex:0 0 auto; }
-        @media (max-width: 390px) { #tasks-container { grid-template-columns:1fr; gap:.6rem; } }
+        #assignee-filter-bar { display:flex; flex-wrap:wrap; gap:.3rem; max-width:100%; max-height:58px; overflow:hidden; align-content:flex-start; padding:1px 0; }
+        #assignee-filter-bar button { flex:0 0 auto; padding:.22rem .5rem !important; font-size:10px !important; line-height:1.25; }
+        #tasks-container { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        @media (max-width: 390px) { #tasks-container { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.4rem; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
@@ -33,6 +34,7 @@
             <div class="flex items-center gap-2">
                 <span id="sync-status" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">מתחבר...</span>
                 <button onclick="loadTasks()" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">🔄 רענן</button>
+                <button type="button" onclick="toggleAddTask()" id="add-task-toggle" aria-expanded="false" title="הוספת משימה" class="bg-teal-600 hover:bg-teal-700 text-white text-lg font-bold w-9 h-9 rounded-lg transition">＋</button>
                 <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition">⚙️ הגדרות</button>
             </div>
         </div>
@@ -71,9 +73,7 @@
 
     <main class="max-w-5xl mx-auto px-4 mt-6 space-y-6">
 
-        <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <button type="button" onclick="toggleAddTask()" id="add-task-toggle" aria-expanded="false" class="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-slate-800"><span>הוספת משימה חדשה</span><span id="add-task-plus" class="text-xl text-teal-700">＋</span></button>
-            <div id="add-task-panel" class="hidden border-t border-slate-100 p-4">
+        <section id="add-task-panel" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-4">
             <form onsubmit="addTask(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
                 <input type="text" id="task-title" required placeholder="מה צריך לעשות?" class="sm:col-span-5 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                 
@@ -89,7 +89,7 @@
                 </select>
 
                 <button type="submit" class="sm:col-span-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm">הוסף</button>
-            </form></div></section>
+            </form></section>
 
         <!-- סרגל סינון, מיון ותצוגה (נשמר בזיכרון) -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
@@ -170,7 +170,7 @@
         const TASK_CACHE_KEY='home_tasks_cache_v1';
         function saveTasksCache(){try{localStorage.setItem(TASK_CACHE_KEY,JSON.stringify({tasks:tasks,savedAt:Date.now()}));}catch(e){}}
         function loadTasksCache(){try{const x=JSON.parse(localStorage.getItem(TASK_CACHE_KEY)||'null');if(x&&Array.isArray(x.tasks)){tasks=x.tasks;return true;}}catch(e){}return false;}
-        function toggleAddTask(){const p=document.getElementById('add-task-panel');const open=p.classList.contains('hidden');p.classList.toggle('hidden',!open);document.getElementById('add-task-plus').textContent=open?'−':'＋';document.getElementById('add-task-toggle').setAttribute('aria-expanded',String(open));if(open)document.getElementById('task-title').focus();}
+        function toggleAddTask(){const p=document.getElementById('add-task-panel');const open=p.classList.contains('hidden');p.classList.toggle('hidden',!open);document.getElementById('add-task-toggle').textContent=open?'×':'＋';document.getElementById('add-task-toggle').setAttribute('aria-expanded',String(open));if(open)document.getElementById('task-title').focus();}
         function openEditTask(id){const t=tasks.find(x=>String(x.id)===String(id));if(!t)return;document.getElementById('edit-task-id').value=t.id;document.getElementById('edit-task-title').value=t.title||'';document.getElementById('edit-task-category').innerHTML=categories.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-assignee').innerHTML=assignees.map(x=>'<option>'+escapeHtml(x)+'</option>').join('');document.getElementById('edit-task-category').value=t.category;document.getElementById('edit-task-assignee').value=t.assignee;document.getElementById('edit-task-priority').value=t.priority||'רגיל';document.getElementById('edit-task-progress').value=t.progress||'';document.getElementById('edit-task-modal').classList.remove('hidden');}
         function closeEditTask(){document.getElementById('edit-task-modal').classList.add('hidden');}
         function saveEditedTask(){
