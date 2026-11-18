@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>משימות הבית והמשפחה</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Rubik', sans-serif; }
     </style>
@@ -25,15 +25,13 @@
             <div class="flex items-center gap-2">
                 <span id="sync-status" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">מתחבר...</span>
                 <button onclick="loadTasks()" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">🔄 רענן</button>
-                <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition">⚙️ הגדרות וניהול</button>
+                <button onclick="toggleSettings()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg transition">⚙️ הגדרות</button>
             </div>
         </div>
 
         <!-- פאנל הגדרות, קטגוריות ושמות -->
         <div id="settings-bar" class="hidden bg-slate-100 border-t border-slate-200 px-4 py-5 shadow-inner">
             <div class="max-w-5xl mx-auto space-y-5">
-                
-                <!-- חיבור שיטס -->
                 <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-2 items-center">
                     <label class="text-xs font-bold text-slate-700 shrink-0">קישור Web App URL:</label>
                     <input type="text" id="gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="flex-1 w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-mono">
@@ -41,7 +39,6 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- ניהול קטגוריות -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                         <h3 class="font-bold text-sm text-slate-900">📂 ניהול רשימת קטגוריות</h3>
                         <div class="flex gap-2">
@@ -51,7 +48,6 @@
                         <div id="manage-categories-list" class="flex flex-wrap gap-1.5"></div>
                     </div>
 
-                    <!-- ניהול שמות (משויכים) -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                         <h3 class="font-bold text-sm text-slate-900">👥 ניהול שמות (לשיוך משימות)</h3>
                         <div class="flex gap-2">
@@ -61,7 +57,6 @@
                         <div id="manage-assignees-list" class="flex flex-wrap gap-1.5"></div>
                     </div>
                 </div>
-
             </div>
         </div>
     </header>
@@ -78,29 +73,47 @@
 
                 <select id="task-assignee" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"></select>
 
-                <select id="task-priority" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    <option value="דחוף">🔴 דחוף</option>
-                    <option value="רגיל" selected>🟡 רגיל</option>
-                    <option value="נמוך">🟢 כשמתפנה</option>
+                <select id="task-priority" class="sm:col-span-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <option value="היום">🔥 1 - היום</option>
+                    <option value="דחוף">🔴 2 - דחוף</option>
+                    <option value="רגיל" selected>🟡 3 - רגיל</option>
+                    <option value="נמוך">🟢 4 - כשמתפנה</option>
                 </select>
 
                 <button type="submit" class="sm:col-span-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-sm">הוסף</button>
             </form>
         </div>
 
-        <!-- סרגל סינון דינמי -->
-        <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
-            <div id="assignee-filter-bar" class="flex flex-wrap items-center gap-1.5"></div>
-
-            <div class="flex items-center gap-3">
-                <select id="filter-category" onchange="renderTasks()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-medium text-slate-700 focus:outline-none">
-                    <option value="הכל">כל הקטגוריות</option>
-                </select>
-
-                <label class="flex items-center gap-1.5 text-xs font-medium text-slate-600 cursor-pointer">
-                    <input type="checkbox" id="show-done" onchange="renderTasks()" class="accent-teal-600 w-4 h-4">
+        <!-- סרגל סינון, מיון ותצוגה (נשמר בזיכרון) -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div id="assignee-filter-bar" class="flex flex-wrap items-center gap-1.5"></div>
+                
+                <label class="flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <input type="checkbox" id="show-done" onchange="onPreferenceChange()" class="accent-teal-600 w-4 h-4">
                     הצג הושלמו
                 </label>
+            </div>
+
+            <div class="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-3">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-500">📂 קטגוריה:</span>
+                    <select id="filter-category" onchange="onPreferenceChange()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 font-medium text-slate-700 focus:outline-none">
+                        <option value="הכל">כל הקטגוריות</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-slate-500">↕️ מיון לפי:</span>
+                    <select id="sort-by" onchange="onPreferenceChange()" class="text-xs bg-indigo-50/60 border border-indigo-200 rounded-xl px-3 py-1.5 font-bold text-indigo-900 focus:outline-none">
+                        <option value="priority">דחיפות (מהיום ומטה)</option>
+                        <option value="newest">הכי חדשות (למעלה)</option>
+                        <option value="oldest">הכי ישנות (למעלה)</option>
+                        <option value="progress_desc">אחוזי התקדמות (מהגבוה לנמוך)</option>
+                        <option value="progress_asc">אחוזי התקדמות (מהנמוך לגבוה)</option>
+                        <option value="category">לפי קטגוריה</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -117,27 +130,54 @@
         let tasks = [];
         let categories = ['🛠️ בית ותחזוקה', '🧸 ילדים וחינוך', '🛒 קניות וסידורים', '💳 כספים ובירוקרטיה', '📌 כללי'];
         let assignees = ['שמוליק', 'מושקא', 'משותף'];
-        let filterAssignee = 'הכל';
+        let expandedHistoryIds = new Set();
 
-        // המרת תאריך לעברי + יום בשבוע
-        function getHebrewDateString(dateObj = new Date(), includeYear = true) {
+        // טעינת העדפות תצוגה שנשמרו בפעם הקודמת
+        let savedPrefs = {};
+        try { savedPrefs = JSON.parse(localStorage.getItem('home_view_prefs') || '{}'); } catch(e) {}
+        let filterAssignee = savedPrefs.filterAssignee || 'הכל';
+
+        function savePrefs() {
+            const prefs = {
+                filterAssignee: filterAssignee,
+                filterCategory: document.getElementById('filter-category').value,
+                sortBy: document.getElementById('sort-by').value,
+                showDone: document.getElementById('show-done').checked
+            };
+            localStorage.setItem('home_view_prefs', JSON.stringify(prefs));
+        }
+
+        function onPreferenceChange() {
+            savePrefs();
+            renderTasks();
+        }
+
+        // תאריך עברי + יום בשבוע + שעה
+        function getHebrewDateString(dateObj = new Date()) {
             const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'long' }).format(dateObj);
-            const hebOptions = { calendar: 'hebrew', day: 'numeric', month: 'long' };
-            if (includeYear) hebOptions.year = 'numeric';
-            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', hebOptions).format(dateObj);
+            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { calendar: 'hebrew', day: 'numeric', month: 'long', year: 'numeric' }).format(dateObj);
             return `${weekday}, ${hebDate}`;
         }
 
         function getShortHebrewStamp() {
-            const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'short' }).format(new Date());
-            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { calendar: 'hebrew', day: 'numeric', month: 'short' }).format(new Date());
-            return `יום ${weekday} (${hebDate})`;
+            const now = new Date();
+            const weekday = new Intl.DateTimeFormat('he-IL', { weekday: 'short' }).format(now);
+            const hebDate = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { calendar: 'hebrew', day: 'numeric', month: 'short' }).format(now);
+            const time = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+            return `יום ${weekday} (${hebDate}) ${time}`;
         }
 
         window.onload = function() {
-            document.getElementById('hebrew-header-date').innerText = '📅 ' + getHebrewDateString(new Date(), true);
+            document.getElementById('hebrew-header-date').innerText = '📅 ' + getHebrewDateString(new Date());
             document.getElementById('gas-url').value = gasUrl;
+            
+            // שחזור הגדרות תצוגה שמורות
+            if (savedPrefs.sortBy) document.getElementById('sort-by').value = savedPrefs.sortBy;
+            if (savedPrefs.showDone !== undefined) document.getElementById('show-done').checked = savedPrefs.showDone;
+
             refreshDropdownsAndManagement();
+            if (savedPrefs.filterCategory) document.getElementById('filter-category').value = savedPrefs.filterCategory;
+            
             loadTasks();
         };
 
@@ -157,7 +197,7 @@
         function refreshDropdownsAndManagement() {
             const catSelect = document.getElementById('task-category');
             const filterCatSelect = document.getElementById('filter-category');
-            const currentFilterCat = filterCatSelect.value;
+            const currentFilterCat = filterCatSelect.value || savedPrefs.filterCategory || 'הכל';
 
             catSelect.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
             filterCatSelect.innerHTML = `<option value="הכל">כל הקטגוריות</option>` + 
@@ -212,7 +252,7 @@
         function removeAssignee(idx) {
             if (assignees.length <= 1) { showToast('חייב להישאר לפחות שם אחד'); return; }
             const removed = assignees[idx];
-            if (filterAssignee === removed) filterAssignee = 'הכל';
+            if (filterAssignee === removed) { filterAssignee = 'הכל'; savePrefs(); }
             assignees.splice(idx, 1);
             refreshDropdownsAndManagement();
             renderTasks();
@@ -267,6 +307,9 @@
                         if (res.categories && res.categories.length) categories = res.categories;
                         if (res.assignees && res.assignees.length) assignees = res.assignees;
                         refreshDropdownsAndManagement();
+                        if (savedPrefs.filterCategory && categories.includes(savedPrefs.filterCategory)) {
+                            document.getElementById('filter-category').value = savedPrefs.filterCategory;
+                        }
                         setStatus('מסונכרן ✓', 'bg-emerald-50 text-emerald-700');
                         renderTasks();
                     } else {
@@ -282,6 +325,7 @@
             const title = document.getElementById('task-title').value.trim();
             if (!title) return;
 
+            const stamp = getShortHebrewStamp();
             const newTask = {
                 id: Date.now(),
                 title: title,
@@ -290,7 +334,9 @@
                 priority: document.getElementById('task-priority').value,
                 status: 'פתוח',
                 progress: '',
-                updatedAt: getShortHebrewStamp()
+                percent: 0,
+                updatedAt: stamp,
+                history: [{ date: stamp, text: `המשימה נוצרה (שויכה ל-${document.getElementById('task-assignee').value})` }]
             };
 
             tasks.unshift(newTask);
@@ -306,19 +352,57 @@
         function updateTaskField(id, field, value) {
             const t = tasks.find(x => x.id === id);
             if (!t) return;
+            
+            const stamp = getShortHebrewStamp();
+            if (!Array.isArray(t.history)) t.history = [];
+
+            // יצירת רשומה ברורה להיסטוריית הפעולות
+            let logText = '';
+            if (field === 'progress') {
+                if (value.trim() === (t.progress || '').trim()) return;
+                logText = value.trim() ? `עדכון התקדמות: "${value.trim()}"` : 'נמחקה הערת ההתקדמות';
+            } else if (field === 'percent') {
+                value = Number(value);
+                if (value === Number(t.percent || 0)) return;
+                logText = `אחוז התקדמות עודכן ל-${value}%`;
+                if (value === 100 && t.status !== 'הושלם') {
+                    t.status = 'הושלם';
+                    logText += ' (המשימה סומנה כהושלמה)';
+                }
+            } else if (field === 'status') {
+                logText = value === 'הושלם' ? '✅ המשימה סומנה כהושלמה' : '🔄 המשימה נפתחה מחדש';
+                if (value === 'הושלם' && (t.percent || 0) < 100) t.percent = 100;
+            } else if (field === 'assignee') {
+                logText = `השיוך הועבר ל-${value}`;
+            } else if (field === 'priority') {
+                logText = `הדחיפות שונתה ל-${value}`;
+            } else if (field === 'category') {
+                logText = `הקטגוריה שונתה ל-${value}`;
+            }
+
             t[field] = value;
-            t.updatedAt = getShortHebrewStamp();
+            t.updatedAt = stamp;
+            if (logText) {
+                t.history.unshift({ date: stamp, text: logText });
+            }
+
             renderTasks();
 
             setStatus('מעדכן...', 'bg-amber-50 text-amber-700');
-            const updates = { [field]: value, updatedAt: t.updatedAt };
+            const updates = {
+                [field]: value,
+                status: t.status,
+                percent: t.percent,
+                updatedAt: t.updatedAt,
+                history: t.history
+            };
             fetchJSONP({ action: 'updateTask', id: id, updates: JSON.stringify(updates) })
                 .then(() => setStatus('מסונכרן ✓', 'bg-emerald-50 text-emerald-700'))
                 .catch(() => setStatus('שגיאת עדכון', 'bg-rose-50 text-rose-700'));
         }
 
         function deleteTask(id) {
-            if (!confirm('למחוק משימה זו?')) return;
+            if (!confirm('למחוק משימה זו לצמיתות?')) return;
             tasks = tasks.filter(x => x.id !== id);
             renderTasks();
             fetchJSONP({ action: 'deleteTask', id: id })
@@ -327,6 +411,13 @@
 
         function setFilterAssignee(who) {
             filterAssignee = who;
+            savePrefs();
+            renderTasks();
+        }
+
+        function toggleTaskHistory(id) {
+            if (expandedHistoryIds.has(id)) expandedHistoryIds.delete(id);
+            else expandedHistoryIds.add(id);
             renderTasks();
         }
 
@@ -346,29 +437,52 @@
         function renderTasks() {
             const showDone = document.getElementById('show-done').checked;
             const filterCat = document.getElementById('filter-category').value;
+            const sortBy = document.getElementById('sort-by').value;
             const openTasks = tasks.filter(t => t.status !== 'הושלם');
 
+            // בניית סרגל כפתורי שמות דינמי (כולל ספירה משולבת של "משותף" עבור שמוליק/מושקא)
             const filterBar = document.getElementById('assignee-filter-bar');
             let buttonsHtml = `<button onclick="setFilterAssignee('הכל')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition ${filterAssignee === 'הכל' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">הכל (${openTasks.length})</button>`;
             
             assignees.forEach(name => {
-                const count = openTasks.filter(t => t.assignee === name).length;
+                // אם זה שם אישי (לא "משותף"), הספירה כוללת גם את המשימות המשותפות
+                const count = (name === 'משותף')
+                    ? openTasks.filter(t => t.assignee === 'משותף').length
+                    : openTasks.filter(t => t.assignee === name || t.assignee === 'משותף').length;
+                
                 const activeRing = filterAssignee === name ? 'ring-2 ring-offset-1 ring-slate-800' : 'opacity-85 hover:opacity-100';
                 buttonsHtml += `<button onclick="setFilterAssignee('${escapeHtml(name)}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${getAssigneeStyle(name)} ${activeRing}">${escapeHtml(name)} (${count})</button>`;
             });
             filterBar.innerHTML = buttonsHtml;
 
+            // סינון משימות: בחירה בשמוליק או מושקא מציגה גם משימות "משותף"
             let filtered = tasks.filter(t => {
                 if (!showDone && t.status === 'הושלם') return false;
-                if (filterAssignee !== 'הכל' && t.assignee !== filterAssignee) return false;
+                if (filterAssignee !== 'הכל') {
+                    if (filterAssignee === 'משותף') {
+                        if (t.assignee !== 'משותף') return false;
+                    } else {
+                        if (t.assignee !== filterAssignee && t.assignee !== 'משותף') return false;
+                    }
+                }
                 if (filterCat !== 'הכל' && t.category !== filterCat) return false;
                 return true;
             });
 
-            const prioWeight = { 'דחוף': 1, 'רגיל': 2, 'נמוך': 3 };
+            // מיון גמיש לפי הבחירה השמורה
+            const prioWeight = { 'היום': 1, 'דחוף': 2, 'רגיל': 3, 'נמוך': 4 };
             filtered.sort((a, b) => {
+                // משימות שהושלמו תמיד יורדות לסוף הרשימה
                 if ((a.status === 'הושלם') !== (b.status === 'הושלם')) return a.status === 'הושלם' ? 1 : -1;
-                return (prioWeight[a.priority] || 2) - (prioWeight[b.priority] || 2);
+                
+                if (sortBy === 'newest') return b.id - a.id;
+                if (sortBy === 'oldest') return a.id - b.id;
+                if (sortBy === 'progress_desc') return (Number(b.percent) || 0) - (Number(a.percent) || 0);
+                if (sortBy === 'progress_asc') return (Number(a.percent) || 0) - (Number(b.percent) || 0);
+                if (sortBy === 'category') return (a.category || '').localeCompare(b.category || '', 'he');
+                
+                // ברירת מחדל: דחיפות
+                return (prioWeight[a.priority] || 3) - (prioWeight[b.priority] || 3);
             });
 
             const container = document.getElementById('tasks-container');
@@ -381,8 +495,13 @@
 
             filtered.forEach(t => {
                 const isDone = t.status === 'הושלם';
+                const pct = Number(t.percent) || 0;
+                const isHistoryOpen = expandedHistoryIds.has(t.id);
+                const histList = Array.isArray(t.history) ? t.history : [];
+
                 const borderColor = {
-                    'דחוף': 'border-r-rose-500',
+                    'היום': 'border-r-red-600 bg-red-50/15',
+                    'דחוף': 'border-r-orange-500',
                     'רגיל': 'border-r-amber-400',
                     'נמוך': 'border-r-emerald-400'
                 }[t.priority] || 'border-r-slate-300';
@@ -395,8 +514,17 @@
                     `<option value="${escapeHtml(c)}" ${t.category === c ? 'selected' : ''}>${escapeHtml(c)}</option>`
                 ).join('');
 
+                const historyHtml = histList.length > 0 
+                    ? histList.map(h => `
+                        <div class="flex items-start justify-between gap-2 text-xs py-1.5 border-b border-slate-100 last:border-0">
+                            <span class="text-slate-700">• ${escapeHtml(h.text)}</span>
+                            <span class="text-[11px] text-slate-400 shrink-0">${escapeHtml(h.date)}</span>
+                        </div>`).join('')
+                    : `<p class="text-xs text-slate-400 italic">טרם נרשמו פעולות בהיסטוריה.</p>`;
+
                 const card = `
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-r-4 ${borderColor} shadow-sm transition ${isDone ? 'opacity-60 bg-slate-50' : ''}">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 border-r-4 ${borderColor} shadow-sm transition ${isDone ? 'opacity-65 bg-slate-50' : ''}">
+                    <!-- שורה ראשית -->
                     <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                         <div class="flex items-center gap-2.5 flex-1 min-w-[200px]">
                             <input type="checkbox" ${isDone ? 'checked' : ''} onchange="updateTaskField(${t.id}, 'status', this.checked ? 'הושלם' : 'פתוח')" class="w-5 h-5 accent-teal-600 cursor-pointer shrink-0">
@@ -408,10 +536,11 @@
                                 ${assigneeOptions}
                             </select>
 
-                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 cursor-pointer">
-                                <option value="דחוף" ${t.priority==='דחוף'?'selected':''}>🔴 דחוף</option>
-                                <option value="רגיל" ${t.priority==='רגיל'?'selected':''}>🟡 רגיל</option>
-                                <option value="נמוך" ${t.priority==='נמוך'?'selected':''}>🟢 כשמתפנה</option>
+                            <select onchange="updateTaskField(${t.id}, 'priority', this.value)" class="text-xs font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 cursor-pointer">
+                                <option value="היום" ${t.priority==='היום'?'selected':''}>🔥 1 - היום</option>
+                                <option value="דחוף" ${t.priority==='דחוף'?'selected':''}>🔴 2 - דחוף</option>
+                                <option value="רגיל" ${t.priority==='רגיל'?'selected':''}>🟡 3 - רגיל</option>
+                                <option value="נמוך" ${t.priority==='נמוך'?'selected':''}>🟢 4 - כשמתפנה</option>
                             </select>
 
                             <select onchange="updateTaskField(${t.id}, 'category', this.value)" class="text-xs bg-slate-100 text-slate-700 border border-slate-200 px-2 py-1 rounded-lg cursor-pointer">
@@ -422,15 +551,33 @@
                         </div>
                     </div>
 
-                    <!-- שורת עדכון התקדמות -->
+                    <!-- פס התקדמות באחוזים -->
+                    <div class="flex items-center gap-3 mb-2.5 px-1">
+                        <span class="text-xs font-bold text-slate-600 shrink-0 w-16">התקדמות:</span>
+                        <input type="range" min="0" max="100" step="10" value="${pct}" 
+                               onchange="updateTaskField(${t.id}, 'percent', this.value)"
+                               oninput="this.nextElementSibling.innerText = this.value + '%'"
+                               class="flex-1 accent-teal-600 cursor-pointer h-2 bg-slate-200 rounded-lg">
+                        <span class="text-xs font-extrabold text-teal-700 w-10 text-left">${pct}%</span>
+                    </div>
+
+                    <!-- שורת עדכון התקדמות טקסטואלי + כפתור היסטוריה -->
                     <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <span class="text-xs font-bold text-teal-700 shrink-0">📝 התקדמות:</span>
+                        <span class="text-xs font-bold text-teal-700 shrink-0">📝 סטטוס נוכחי:</span>
                         <input type="text" value="${escapeHtml(t.progress || '')}" 
-                               placeholder="כתוב כאן איפה זה עומד..." 
+                               placeholder="כתוב כאן מה נעשה לאחרונה..." 
                                onchange="updateTaskField(${t.id}, 'progress', this.value)"
                                onkeydown="if(event.key==='Enter') this.blur()"
                                class="flex-1 min-w-[180px] bg-transparent text-xs text-slate-800 focus:outline-none">
-                        <span class="text-[11px] font-medium text-slate-500 shrink-0">עודכן: ${escapeHtml(t.updatedAt || '')}</span>
+                        <button onclick="toggleTaskHistory(${t.id})" class="text-[11px] font-bold bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 px-2.5 py-1 rounded-lg transition shrink-0">
+                            📜 היסטוריה (${histList.length}) ${isHistoryOpen ? '▲' : '▼'}
+                        </button>
+                    </div>
+
+                    <!-- מגירת היסטוריית פעולות מתקפלת -->
+                    <div class="${isHistoryOpen ? '' : 'hidden'} mt-2 bg-slate-50/70 p-3 rounded-xl border border-slate-200/80">
+                        <div class="text-[11px] font-bold text-slate-500 mb-1.5">יומן פעולות ועדכונים למשימה זו:</div>
+                        ${historyHtml}
                     </div>
                 </div>`;
                 container.insertAdjacentHTML('beforeend', card);
